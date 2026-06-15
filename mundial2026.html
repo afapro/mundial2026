@@ -741,7 +741,7 @@
   .logout-btns { display: flex; gap: 10px; justify-content: center; }
   .logout-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; }
   .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .logout-confirm:hover { background: #e74c3c; }
+  .logout-confirm:hover { background: #3498db; }
 
 
   .version-badge {
@@ -751,7 +751,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #e74c3c;
+    background: #3498db;
     z-index: 999;
     cursor: default;
   }
@@ -2715,11 +2715,14 @@ function clearLocalData() {
 
 async function confirmLogout() {
   document.getElementById('logout-modal').classList.remove('open');
-  try { await sb.auth.signOut(); } catch(e) {}
+  // Clear everything immediately regardless of Supabase response
   currentUser = null;
   updateAuthBtn(null);
   setSyncStatus('');
   clearLocalData();
+  window._lastSyncTime = null;
+  // Then try to sign out from Supabase
+  try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
 }
 
 function setSyncStatus(msg, type='') {
