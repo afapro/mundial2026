@@ -741,7 +741,7 @@
   .logout-btns { display: flex; gap: 10px; justify-content: center; }
   .logout-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; }
   .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .logout-confirm:hover { background: #e74c3c; }
+  .logout-confirm:hover { background: #3498db; }
 
 
   .version-badge {
@@ -751,7 +751,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #e74c3c;
+    background: #3498db;
     z-index: 999;
     cursor: default;
   }
@@ -2714,6 +2714,7 @@ function setSyncStatus(msg, type='') {
 
 function updateAuthBtn(user) {
   const btn = document.getElementById('auth-btn');
+  if (!btn) return;
   if (user) {
     const avatar = user.user_metadata?.avatar_url;
     btn.innerHTML = avatar
