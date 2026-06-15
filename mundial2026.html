@@ -2696,14 +2696,16 @@ async function applyCloudData(data) {
     results   = JSON.parse(data.results   || '{}');
     koSeen    = new Set(JSON.parse(data.ko_seen    || '[]'));
     koResults = JSON.parse(data.ko_results || '{}');
+    // Write directly to localStorage — bypass patched saveSeen/saveResults
+    // to avoid triggering a re-upload to cloud
     localStorage.setItem('wc2026_seen',       JSON.stringify([...seen]));
     localStorage.setItem('wc2026_results',    JSON.stringify(results));
     localStorage.setItem('wc2026_koSeen2',    JSON.stringify([...koSeen]));
     localStorage.setItem('wc2026_koResults2', JSON.stringify(koResults));
+    window._lastSyncTime = new Date(data.updated_at).getTime();
     updateStats();
     renderMatches();
     if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) reRenderBracket();
-    window._lastSyncTime = new Date(data.updated_at).getTime();
   } catch(e) {}
 }
 
