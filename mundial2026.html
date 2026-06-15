@@ -585,6 +585,129 @@
     header { padding: 0 12px; }
     main { padding: 12px; }
   }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+
+    /* Header: dos filas en móvil */
+    header {
+      height: auto;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      gap: 6px;
+    }
+    .logo-wrap { flex: 1; min-width: 0; }
+    .fifa-logo { height: 36px; }
+    .logo-mundial, .logo-year { font-size: 20px; letter-spacing: 2px; }
+
+    /* Stats pills más pequeños */
+    .header-stats { gap: 6px; }
+    .stat-pill { padding: 4px 10px; font-size: 11px; }
+    .stat-pill .num { font-size: 13px; }
+
+    /* Auth btn: ancho completo en segunda fila */
+    #auth-wrap {
+      width: 100%;
+      order: 3;
+    }
+    .auth-btn {
+      width: 100%;
+      justify-content: center;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 8px;
+    }
+
+    /* Progress bar */
+    .progress-bar-container { padding: 8px 12px; gap: 8px; }
+    .progress-label { font-size: 11px; }
+
+    /* Tabs: scroll horizontal en vez de wrap */
+    .tabs {
+      padding: 0 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 0;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 12px 14px;
+      font-size: 11px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Filtros: scroll horizontal */
+    #filters-bar, #squad-filters-bar {
+      padding: 8px 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      flex-wrap: nowrap;
+      scrollbar-width: none;
+      gap: 6px;
+    }
+    #filters-bar::-webkit-scrollbar,
+    #squad-filters-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      padding: 5px 10px;
+      font-size: 11px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Contenido principal */
+    main { padding: 8px 12px; }
+
+    /* Tarjetas de partidos */
+    .match-main {
+      grid-template-columns: 60px 1fr auto 1fr 44px 30px;
+      gap: 4px;
+      padding: 10px 10px 10px 12px;
+    }
+    .team-home, .team-away { font-size: 11px; gap: 4px; }
+    .flag { font-size: 15px; }
+    .score-value { font-size: 16px; }
+    .match-date { font-size: 11px; }
+    .time { font-size: 13px !important; }
+    .group-badge { font-size: 9px; padding: 1px 5px; }
+
+    /* Nombres que se cortan: reducir fuente */
+    .team-home span:last-child,
+    .team-away span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 70px;
+    }
+
+    /* Day header */
+    .day-label { font-size: 14px; }
+    .day-count { font-size: 11px; }
+
+    /* Clasificación */
+    .standings-grid { grid-template-columns: 1fr; }
+    .standing-row { font-size: 12px; }
+    .team-sml { font-size: 11px; }
+
+    /* Plantillas grid */
+    .squad-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .team-card { padding: 10px 12px; }
+    .team-name { font-size: 13px; }
+
+    /* Panel de plantilla */
+    .squad-panel { padding: 16px 12px; }
+    .player-row { font-size: 12px; }
+    .player-num { width: 22px; font-size: 11px; }
+    .player-age { width: 26px; font-size: 11px; }
+
+    /* Eliminatorias: scroll horizontal */
+    .bracket-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .bracket-cols { min-width: 900px; }
+    .bs-match { min-width: 160px; }
+    .bs-name { font-size: 12px; }
+    .bs-score { font-size: 13px; }
+  }
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
