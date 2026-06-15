@@ -2734,13 +2734,14 @@ setInterval(async () => {
   if (!currentUser || window._editorOpen) return;
   try {
     const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
+    console.log('[sync] data=', data, 'error=', error);
     if (error || !data) { console.log('[sync] error o sin datos', error); return; }
     const cloudTime = new Date(data.updated_at).getTime();
     console.log('[sync] cloud:', cloudTime, 'local:', window._lastSyncTime, 'diff:', cloudTime - (window._lastSyncTime||0));
     if (window._lastSyncTime && cloudTime <= window._lastSyncTime) return;
     console.log('[sync] aplicando datos de la nube');
     await applyCloudData(data);
-  } catch(e) { console.log('[sync] excepcion', e); }
+  } catch(e) { console.log('[sync] excepcion', e.message, e); }
 }, 3000);
 
 // Auth state
