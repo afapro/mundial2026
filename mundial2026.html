@@ -2677,6 +2677,7 @@ function updateAuthBtn(user) {
 
 async function syncToCloud() {
   if (!currentUser) return;
+  console.log('[upload] subiendo a la nube...');
   const payload = {
     user_id: currentUser.email,
     seen: JSON.stringify([...seen]),
@@ -2687,7 +2688,7 @@ async function syncToCloud() {
   };
   const { error } = await sb.from('progress').upsert(payload, { onConflict: 'user_id' });
   if (error) { setSyncStatus('⚠️ Error al guardar', 'err'); }
-  else { window._lastSyncTime = Date.now(); setSyncStatus(''); }
+  else { window._lastSyncTime = Date.now(); setSyncStatus(''); console.log('[upload] guardado en nube, _lastSyncTime=', window._lastSyncTime); }
 }
 
 async function applyCloudData(data) {
@@ -2732,11 +2733,13 @@ setInterval(async () => {
   if (!currentUser || window._editorOpen) return;
   try {
     const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
-    if (error || !data) return;
+    if (error || !data) { console.log('[sync] error o sin datos', error); return; }
     const cloudTime = new Date(data.updated_at).getTime();
+    console.log('[sync] cloud:', cloudTime, 'local:', window._lastSyncTime, 'diff:', cloudTime - (window._lastSyncTime||0));
     if (window._lastSyncTime && cloudTime <= window._lastSyncTime) return;
+    console.log('[sync] aplicando datos de la nube');
     await applyCloudData(data);
-  } catch(e) {}
+  } catch(e) { console.log('[sync] excepcion', e); }
 }, 3000);
 
 // Auth state
