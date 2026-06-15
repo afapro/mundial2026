@@ -2690,39 +2690,54 @@ async function syncToCloud() {
   else { window._lastSyncTime = Date.now(); setSyncStatus(''); }
 }
 
-async function loadFromCloud() {
-  if (!currentUser) return;
-  const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
-  if (error || !data) { setSyncStatus('Sin datos en la nube'); setTimeout(() => setSyncStatus(''), 2000); return; }
-  // Merge: cloud wins if more recent
+async function applyCloudData(data) {
   try {
-    const cloudSeen = new Set(JSON.parse(data.seen || '[]'));
-    const cloudResults = JSON.parse(data.results || '{}');
-    const cloudKoSeen = new Set(JSON.parse(data.ko_seen || '[]'));
-    const cloudKoResults = JSON.parse(data.ko_results || '{}');
-    seen = cloudSeen;
-    results = cloudResults;
-    koSeen = cloudKoSeen;
-    koResults = cloudKoResults;
-    // Persist to localStorage too
-    saveSeen(); saveResults(); saveKoSeen(); saveKoResults();
-    updateStats(); renderMatches();
-    if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) renderEliminatorias();
+    seen      = new Set(JSON.parse(data.seen       || '[]'));
+    results   = JSON.parse(data.results   || '{}');
+    koSeen    = new Set(JSON.parse(data.ko_seen    || '[]'));
+    koResults = JSON.parse(data.ko_results || '{}');
+    localStorage.setItem('wc2026_seen',       JSON.stringify([...seen]));
+    localStorage.setItem('wc2026_results',    JSON.stringify(results));
+    localStorage.setItem('wc2026_koSeen2',    JSON.stringify([...koSeen]));
+    localStorage.setItem('wc2026_koResults2', JSON.stringify(koResults));
+    updateStats();
+    renderMatches();
+    if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) reRenderBracket();
     window._lastSyncTime = new Date(data.updated_at).getTime();
-  } catch(e) { setSyncStatus('Error al cargar datos', 'err'); }
+  } catch(e) {}
 }
 
-// Patch save functions to also sync
-const _origSaveSeen = saveSeen;
-saveSeen = function() { _origSaveSeen(); if(currentUser) { clearTimeout(saveSeen._t); saveSeen._t = setTimeout(syncToCloud, 1500); } };
-const _origSaveResults = saveResults;
-saveResults = function() { _origSaveResults(); if(currentUser) { clearTimeout(saveResults._t); saveResults._t = setTimeout(syncToCloud, 1500); } };
-const _origSaveKoSeen = saveKoSeen;
-saveKoSeen = function() { _origSaveKoSeen(); if(currentUser) { clearTimeout(saveKoSeen._t); saveKoSeen._t = setTimeout(syncToCloud, 1500); } };
-const _origSaveKoResults = saveKoResults;
-saveKoResults = function() { _origSaveKoResults(); if(currentUser) { clearTimeout(saveKoResults._t); saveKoResults._t = setTimeout(syncToCloud, 1500); } };
+async function loadFromCloud() {
+  if (!currentUser) return;
+  try {
+    const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
+    if (!error && data) await applyCloudData(data);
+  } catch(e) {}
+}
 
-// Init auth
+// Patch save functions — upload 1.5s after last change
+const _origSaveSeen = saveSeen;
+saveSeen = function() { _origSaveSeen(); if(currentUser) { clearTimeout(window._syncT); window._syncT = setTimeout(syncToCloud, 1500); } };
+const _origSaveResults = saveResults;
+saveResults = function() { _origSaveResults(); if(currentUser) { clearTimeout(window._syncT); window._syncT = setTimeout(syncToCloud, 1500); } };
+const _origSaveKoSeen = saveKoSeen;
+saveKoSeen = function() { _origSaveKoSeen(); if(currentUser) { clearTimeout(window._syncT); window._syncT = setTimeout(syncToCloud, 1500); } };
+const _origSaveKoResults = saveKoResults;
+saveKoResults = function() { _origSaveKoResults(); if(currentUser) { clearTimeout(window._syncT); window._syncT = setTimeout(syncToCloud, 1500); } };
+
+// Auto-sync: pull from cloud every 3s if something changed
+setInterval(async () => {
+  if (!currentUser || window._editorOpen) return;
+  try {
+    const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
+    if (error || !data) return;
+    const cloudTime = new Date(data.updated_at).getTime();
+    if (window._lastSyncTime && cloudTime <= window._lastSyncTime) return;
+    await applyCloudData(data);
+  } catch(e) {}
+}, 3000);
+
+// Auth state
 sb.auth.getSession().then(async ({ data: { session } }) => {
   if (session?.user) {
     currentUser = session.user;
@@ -2731,37 +2746,11 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
   }
 });
 
-
-// ── AUTO-SYNC cada 10s ──
-setInterval(async () => {
-  const { data, error } = await sb.from('progress').select('updated_at').eq('user_id', currentUser.email).single();
-  if (error || !data) return;
-  const cloudTime = new Date(data.updated_at).getTime();
-  if (!window._lastSyncTime || cloudTime > window._lastSyncTime) {
-    window._lastSyncTime = cloudTime;
-    const { data: full } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
-    if (!full) return;
-    try {
-      seen = new Set(JSON.parse(full.seen || '[]'));
-      results = JSON.parse(full.results || '{}');
-      koSeen = new Set(JSON.parse(full.ko_seen || '[]'));
-      koResults = JSON.parse(full.ko_results || '{}');
-      saveSeen(); saveResults(); saveKoSeen(); saveKoResults();
-      updateStats(); renderMatches();
-      if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) reRenderBracket();
-    } catch(e) {}
-  }
-}, 3000);
-
 sb.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user || null;
   updateAuthBtn(currentUser);
-  if (event === 'SIGNED_IN') {
-    await loadFromCloud();
-  }
-  if (event === 'SIGNED_OUT') {
-    setSyncStatus('');
-  }
+  if (event === 'SIGNED_IN') await loadFromCloud();
+  if (event === 'SIGNED_OUT') setSyncStatus('');
 });
 
 // INIT
