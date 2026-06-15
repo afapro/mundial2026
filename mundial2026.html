@@ -741,7 +741,7 @@
   .logout-btns { display: flex; gap: 10px; justify-content: center; }
   .logout-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; }
   .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .logout-confirm:hover { background: #e74c3c; }
+  .logout-confirm:hover { background: #3498db; }
 
 
   .version-badge {
@@ -751,7 +751,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #e74c3c;
+    background: #3498db;
     z-index: 999;
     cursor: default;
   }
@@ -2815,18 +2815,15 @@ saveKoResults = function() { _origSaveKoResults(); if(currentUser) { clearTimeou
 // Auto-sync: pull from cloud every 3s if something changed
 setInterval(async () => {
   const userEmail = currentUser?.email || (typeof currentUser === 'string' ? currentUser : null);
-  console.log('[tick] email=', userEmail, 'editorOpen=', window._editorOpen);
   if (!userEmail || window._editorOpen) return;
   try {
     const { data, error } = await sb.from('progress').select('*').eq('user_id', userEmail).single();
-    console.log('[sync] data=', !!data, 'error=', error?.message);
-    if (error || !data) { console.log('[sync] error o sin datos', error); return; }
+    if (error || !data) return;
     const cloudTime = new Date(data.updated_at).getTime();
-    console.log('[sync] cloud:', cloudTime, 'local:', window._lastSyncTime, 'diff:', cloudTime - (window._lastSyncTime||0));
+    // Only apply if cloud is strictly newer than what we last synced
     if (window._lastSyncTime && cloudTime <= window._lastSyncTime) return;
-    console.log('[sync] aplicando datos de la nube');
     await applyCloudData(data);
-  } catch(e) { console.log('[sync] excepcion', e.message, e); }
+  } catch(e) {}
 }, 3000);
 
 // Auth state
