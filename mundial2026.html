@@ -741,7 +741,7 @@
   .logout-btns { display: flex; gap: 10px; justify-content: center; }
   .logout-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; }
   .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .logout-confirm:hover { background: #3498db; }
+  .logout-confirm:hover { background: #e74c3c; }
 
 
   .version-badge {
@@ -751,7 +751,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #3498db;
+    background: #e74c3c;
     z-index: 999;
     cursor: default;
   }
@@ -2698,12 +2698,28 @@ async function handleAuth() {
   }
 }
 
+
+function clearLocalData() {
+  seen = new Set();
+  results = {};
+  koSeen = new Set();
+  koResults = {};
+  localStorage.removeItem('wc2026_seen');
+  localStorage.removeItem('wc2026_results');
+  localStorage.removeItem('wc2026_koSeen2');
+  localStorage.removeItem('wc2026_koResults2');
+  window._lastSyncTime = null;
+  updateStats();
+  renderMatches();
+}
+
 async function confirmLogout() {
   document.getElementById('logout-modal').classList.remove('open');
   try { await sb.auth.signOut(); } catch(e) {}
   currentUser = null;
   updateAuthBtn(null);
   setSyncStatus('');
+  clearLocalData();
 }
 
 function setSyncStatus(msg, type='') {
@@ -2801,6 +2817,8 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
     currentUser = session.user;
     updateAuthBtn(currentUser);
     await loadFromCloud();
+  } else {
+    clearLocalData();
   }
 });
 
@@ -2808,7 +2826,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user || null;
   updateAuthBtn(currentUser);
   if (event === 'SIGNED_IN') await loadFromCloud();
-  if (event === 'SIGNED_OUT') setSyncStatus('');
+  if (event === 'SIGNED_OUT') { setSyncStatus(''); clearLocalData(); }
 });
 
 // INIT
