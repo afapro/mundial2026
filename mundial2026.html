@@ -716,6 +716,33 @@
     .bs-name { font-size: 12px; }
     .bs-score { font-size: 13px; }
   }
+
+  /* LOGOUT MODAL */
+  .logout-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .logout-modal.open { display: flex; }
+  .logout-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    width: 280px;
+    text-align: center;
+  }
+  .logout-box h3 { font-size: 16px; margin-bottom: 8px; }
+  .logout-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .logout-btns { display: flex; gap: 10px; justify-content: center; }
+  .logout-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; }
+  .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .logout-confirm:hover { background: #e74c3c; }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2648,13 +2675,19 @@ let currentUser = null;
 
 async function handleAuth() {
   if (currentUser) {
-    await sb.auth.signOut();
+    document.getElementById('logout-modal').classList.add('open');
+    return;
   } else {
     await sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.href }
     });
   }
+}
+
+async function confirmLogout() {
+  document.getElementById('logout-modal').classList.remove('open');
+  await sb.auth.signOut();
 }
 
 function setSyncStatus(msg, type='') {
@@ -2767,5 +2800,16 @@ renderMatches();
 renderSquads();
 
 </script>
+
+<div class="logout-modal" id="logout-modal">
+  <div class="logout-box">
+    <h3>¿Cerrar sesión?</h3>
+    <p>Se cerrará tu sesión de Google en esta web.</p>
+    <div class="logout-btns">
+      <button class="logout-cancel" onclick="document.getElementById('logout-modal').classList.remove('open')">Cancelar</button>
+      <button class="logout-confirm" onclick="confirmLogout()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
