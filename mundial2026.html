@@ -741,7 +741,7 @@
   .logout-btns { display: flex; gap: 10px; justify-content: center; }
   .logout-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; }
   .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .logout-confirm:hover { background: #3498db; }
+  .logout-confirm:hover { background: #e74c3c; }
 
 
   .version-badge {
@@ -751,7 +751,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #3498db;
+    background: #e74c3c;
     z-index: 999;
     cursor: default;
   }
@@ -1990,7 +1990,7 @@ function clubCrest(clubName) {
   // Use Wikipedia logos via a simple approach
   const id = CLUB_ID[clubName];
   if (id) {
-    return `<img src="https://sofascore-proxy.aprofernandez555.workers.dev/?id=${id}" 
+    return `<img src="https://img.sofascore.com/api/v1/team/${id}/image" 
       style="width:20px;height:20px;object-fit:contain;border-radius:2px" 
       onerror="this.style.display='none'" alt="">`;
   }
