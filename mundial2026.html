@@ -2713,7 +2713,7 @@ async function applyCloudData(data) {
 async function loadFromCloud() {
   if (!currentUser) return;
   try {
-    const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
+    const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser?.email || currentUser).single();
     if (!error && data) await applyCloudData(data);
   } catch(e) {}
 }
@@ -2730,11 +2730,12 @@ saveKoResults = function() { _origSaveKoResults(); if(currentUser) { clearTimeou
 
 // Auto-sync: pull from cloud every 3s if something changed
 setInterval(async () => {
-  console.log('[tick] currentUser=', currentUser?.email, 'editorOpen=', window._editorOpen);
-  if (!currentUser || window._editorOpen) return;
+  const userEmail = currentUser?.email || (typeof currentUser === 'string' ? currentUser : null);
+  console.log('[tick] email=', userEmail, 'editorOpen=', window._editorOpen);
+  if (!userEmail || window._editorOpen) return;
   try {
-    const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
-    console.log('[sync] data=', data, 'error=', error);
+    const { data, error } = await sb.from('progress').select('*').eq('user_id', userEmail).single();
+    console.log('[sync] data=', !!data, 'error=', error?.message);
     if (error || !data) { console.log('[sync] error o sin datos', error); return; }
     const cloudTime = new Date(data.updated_at).getTime();
     console.log('[sync] cloud:', cloudTime, 'local:', window._lastSyncTime, 'diff:', cloudTime - (window._lastSyncTime||0));
