@@ -741,7 +741,7 @@
   .logout-btns { display: flex; gap: 10px; justify-content: center; }
   .logout-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; }
   .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
-  .logout-confirm:hover { background: #3498db; }
+  .logout-confirm:hover { background: #e74c3c; }
 
 
   .version-badge {
@@ -751,7 +751,7 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: #3498db;
+    background: #e74c3c;
     z-index: 999;
     cursor: default;
   }
@@ -2672,13 +2672,13 @@ const SQUADS = {"México": {"sel": "Javier Aguirre", "j": [{"n": 1, "nombre": "G
 // Sync when tab becomes visible or window gets focus
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && currentUser) {
-    window._lastSyncTime = null; // force reload
+    window._lastCloudUpdatedAt = null;
     loadFromCloud();
   }
 });
 window.addEventListener('focus', () => {
   if (currentUser) {
-    window._lastSyncTime = null;
+    window._lastCloudUpdatedAt = null;
     loadFromCloud();
   }
 });
@@ -2723,7 +2723,7 @@ function clearLocalData() {
   localStorage.removeItem('wc2026_results');
   localStorage.removeItem('wc2026_koSeen2');
   localStorage.removeItem('wc2026_koResults2');
-  window._lastSyncTime = null;
+  window._lastCloudUpdatedAt = null;
   updateStats();
   renderMatches();
 }
@@ -2735,7 +2735,7 @@ async function confirmLogout() {
   updateAuthBtn(null);
   setSyncStatus('');
   clearLocalData();
-  window._lastSyncTime = null;
+  window._lastCloudUpdatedAt = null;
   // Then try to sign out from Supabase
   try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
 }
@@ -2781,13 +2781,11 @@ async function applyCloudData(data) {
     results   = JSON.parse(data.results   || '{}');
     koSeen    = new Set(JSON.parse(data.ko_seen    || '[]'));
     koResults = JSON.parse(data.ko_results || '{}');
-    // Write directly to localStorage — bypass patched saveSeen/saveResults
-    // to avoid triggering a re-upload to cloud
     localStorage.setItem('wc2026_seen',       JSON.stringify([...seen]));
     localStorage.setItem('wc2026_results',    JSON.stringify(results));
     localStorage.setItem('wc2026_koSeen2',    JSON.stringify([...koSeen]));
     localStorage.setItem('wc2026_koResults2', JSON.stringify(koResults));
-    window._lastSyncTime = new Date(data.updated_at).getTime();
+    window._lastCloudUpdatedAt = data.updated_at; // store string, not timestamp
     updateStats();
     renderMatches();
     if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) reRenderBracket();
@@ -2819,9 +2817,8 @@ setInterval(async () => {
   try {
     const { data, error } = await sb.from('progress').select('*').eq('user_id', userEmail).single();
     if (error || !data) return;
-    const cloudTime = new Date(data.updated_at).getTime();
-    // Only apply if cloud is strictly newer than what we last synced
-    if (window._lastSyncTime && cloudTime <= window._lastSyncTime) return;
+    // Compare updated_at strings directly — if different, apply
+    if (window._lastCloudUpdatedAt && data.updated_at === window._lastCloudUpdatedAt) return;
     await applyCloudData(data);
   } catch(e) {}
 }, 3000);
