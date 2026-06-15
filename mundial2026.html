@@ -976,6 +976,7 @@ function clearResult(id) {
 }
 
 function openEditorFor(id) {
+  window._editorOpen = true;
   if (openEditor && openEditor !== id) closeEditor();
   openEditor = id;
   const ed = document.getElementById(`editor-${id}`);
@@ -983,6 +984,7 @@ function openEditorFor(id) {
 }
 
 function closeEditor() {
+  window._editorOpen = false;
   if (openEditor) {
     const ed = document.getElementById(`editor-${openEditor}`);
     if (ed) ed.classList.remove('open');
@@ -2444,6 +2446,7 @@ function clearKoResult(id) {
 }
 
 function openKoEditorFor(id) {
+  window._editorOpen = true;
   openKoEditor = openKoEditor === id ? null : id;
   reRenderBracket();
 }
@@ -2684,7 +2687,7 @@ async function syncToCloud() {
   };
   const { error } = await sb.from('progress').upsert(payload, { onConflict: 'user_id' });
   if (error) { setSyncStatus('⚠️ Error al guardar', 'err'); }
-  else { setSyncStatus('✓ Guardado en la nube', 'ok'); setTimeout(() => setSyncStatus(''), 2500); }
+  else { window._lastSyncTime = Date.now(); setSyncStatus('✓ Guardado en la nube', 'ok'); setTimeout(() => setSyncStatus(''), 2500); }
 }
 
 async function loadFromCloud() {
@@ -2706,6 +2709,7 @@ async function loadFromCloud() {
     saveSeen(); saveResults(); saveKoSeen(); saveKoResults();
     updateStats(); renderMatches();
     if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) renderEliminatorias();
+    window._lastSyncTime = new Date(data.updated_at).getTime();
     setSyncStatus('✓ Datos cargados', 'ok');
     setTimeout(() => setSyncStatus(''), 2000);
   } catch(e) { setSyncStatus('Error al cargar datos', 'err'); }
@@ -2733,7 +2737,6 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
 
 // ── AUTO-SYNC cada 10s ──
 setInterval(async () => {
-  if (!currentUser) return;
   const { data, error } = await sb.from('progress').select('updated_at').eq('user_id', currentUser.email).single();
   if (error || !data) return;
   const cloudTime = new Date(data.updated_at).getTime();
