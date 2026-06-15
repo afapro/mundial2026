@@ -2730,6 +2730,7 @@ saveKoResults = function() { _origSaveKoResults(); if(currentUser) { clearTimeou
 
 // Auto-sync: pull from cloud every 3s if something changed
 setInterval(async () => {
+  console.log('[tick] currentUser=', currentUser?.email, 'editorOpen=', window._editorOpen);
   if (!currentUser || window._editorOpen) return;
   try {
     const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
