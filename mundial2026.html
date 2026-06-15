@@ -2687,12 +2687,11 @@ async function syncToCloud() {
   };
   const { error } = await sb.from('progress').upsert(payload, { onConflict: 'user_id' });
   if (error) { setSyncStatus('⚠️ Error al guardar', 'err'); }
-  else { window._lastSyncTime = Date.now(); setSyncStatus('✓ Guardado en la nube', 'ok'); setTimeout(() => setSyncStatus(''), 2500); }
+  else { window._lastSyncTime = Date.now(); setSyncStatus(''); }
 }
 
 async function loadFromCloud() {
   if (!currentUser) return;
-  setSyncStatus('Cargando datos...');
   const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
   if (error || !data) { setSyncStatus('Sin datos en la nube'); setTimeout(() => setSyncStatus(''), 2000); return; }
   // Merge: cloud wins if more recent
@@ -2710,8 +2709,6 @@ async function loadFromCloud() {
     updateStats(); renderMatches();
     if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) renderEliminatorias();
     window._lastSyncTime = new Date(data.updated_at).getTime();
-    setSyncStatus('✓ Datos cargados', 'ok');
-    setTimeout(() => setSyncStatus(''), 2000);
   } catch(e) { setSyncStatus('Error al cargar datos', 'err'); }
 }
 
