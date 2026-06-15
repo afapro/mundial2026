@@ -743,6 +743,19 @@
   .logout-confirm { background: #c0392b; border: none; color: #fff; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600; }
   .logout-confirm:hover { background: #e74c3c; }
 
+
+  .version-badge {
+    position: fixed;
+    bottom: 12px;
+    right: 12px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e74c3c;
+    z-index: 999;
+    cursor: default;
+  }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2811,5 +2824,6 @@ renderSquads();
     </div>
   </div>
 </div>
+<div class="version-badge" title="v1"></div>
 </body>
 </html>
