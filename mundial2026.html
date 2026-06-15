@@ -2700,7 +2700,10 @@ async function handleAuth() {
 
 async function confirmLogout() {
   document.getElementById('logout-modal').classList.remove('open');
-  await sb.auth.signOut();
+  try { await sb.auth.signOut(); } catch(e) {}
+  currentUser = null;
+  updateAuthBtn(null);
+  setSyncStatus('');
 }
 
 function setSyncStatus(msg, type='') {
