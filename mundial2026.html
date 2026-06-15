@@ -2743,30 +2743,14 @@ async function handleAuth() {
   if (currentUser) {
     document.getElementById('logout-modal').classList.add('open');
     return;
-  }
-  await sb.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.href }
-  });
-}
-
-function setSyncStatus(msg, type='') {
-  const el = document.getElementById('sync-status');
-  if (el) { el.textContent = msg; el.className = 'sync-indicator' + (type ? ' sync-' + type : ''); }
-}
-
-function updateAuthBtn(user) {
-  const btn = document.getElementById('auth-btn');
-  if (!btn) return;
-  if (user) {
-    const avatar = user.user_metadata?.avatar_url;
-    btn.innerHTML = avatar
-      ? `<img src="${avatar}" alt=""> ${user.user_metadata?.name?.split(' ')[0] || user.email} · Cerrar sesión`
-      : `👤 ${user.email} · Cerrar sesión`;
   } else {
-    btn.innerHTML = '🔑 Iniciar sesión';
+    await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    });
   }
 }
+
 
 function clearLocalData() {
   seen = new Set();
@@ -2784,31 +2768,49 @@ function clearLocalData() {
 
 async function confirmLogout() {
   document.getElementById('logout-modal').classList.remove('open');
+  // Clear everything immediately regardless of Supabase response
   currentUser = null;
   updateAuthBtn(null);
   setSyncStatus('');
   clearLocalData();
+  window._lastCloudUpdatedAt = null;
+  // Then try to sign out from Supabase
   try { await sb.auth.signOut({ scope: 'local' }); } catch(e) {}
+}
+
+function setSyncStatus(msg, type='') {
+  const el = document.getElementById('sync-status');
+  el.textContent = msg;
+  el.className = 'sync-indicator' + (type ? ' sync-' + type : '');
+}
+
+function updateAuthBtn(user) {
+  const btn = document.getElementById('auth-btn');
+  if (!btn) return;
+  if (user) {
+    const avatar = user.user_metadata?.avatar_url;
+    btn.innerHTML = avatar
+      ? `<img src="${avatar}" alt=""> ${user.user_metadata?.name?.split(' ')[0] || user.email} · Cerrar sesión`
+      : `👤 ${user.email} · Cerrar sesión`;
+  } else {
+    btn.innerHTML = '🔑 Iniciar sesión';
+  }
 }
 
 async function syncToCloud() {
   if (!currentUser) return;
-  const userEmail = currentUser?.email || currentUser;
-  const now = new Date().toISOString();
+  console.log('[upload] subiendo a la nube...');
   const payload = {
-    user_id: userEmail,
+    user_id: currentUser.email,
     seen: JSON.stringify([...seen]),
     results: JSON.stringify(results),
     ko_seen: JSON.stringify([...koSeen]),
     ko_results: JSON.stringify(koResults),
-    updated_at: now
+    updated_at: new Date().toISOString()
   };
-  try {
-    const { data, error } = await sb.from('progress').upsert(payload, { onConflict: 'user_id' }).select('updated_at').single();
-    if (!error && data) {
-      window._lastCloudUpdatedAt = data.updated_at || now;
-    }
-  } catch(e) {}
+  const { error } = await sb.from('progress').upsert(payload, { onConflict: 'user_id' });
+  if (error) { setSyncStatus('⚠️ Error al guardar', 'err'); }
+  else { window._lastSyncTime = Date.now(); setSyncStatus(''); console.log('[upload] guardado en nube, _lastSyncTime=', window._lastSyncTime); }
 }
 
 async function applyCloudData(data) {
@@ -2821,7 +2823,7 @@ async function applyCloudData(data) {
     localStorage.setItem('wc2026_results',    JSON.stringify(results));
     localStorage.setItem('wc2026_koSeen2',    JSON.stringify([...koSeen]));
     localStorage.setItem('wc2026_koResults2', JSON.stringify(koResults));
-    window._lastCloudUpdatedAt = data.updated_at;
+    window._lastCloudUpdatedAt = data.updated_at; // store string, not timestamp
     updateStats();
     renderMatches();
     if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) reRenderBracket();
@@ -2831,8 +2833,7 @@ async function applyCloudData(data) {
 async function loadFromCloud() {
   if (!currentUser) return;
   try {
-    const userEmail = currentUser?.email || currentUser;
-    const { data, error } = await sb.from('progress').select('*').eq('user_id', userEmail).single();
+    const { data, error } = await sb.from('progress').select('*').eq('user_id', currentUser?.email || currentUser).single();
     if (!error && data) await applyCloudData(data);
   } catch(e) {}
 }
@@ -2847,7 +2848,7 @@ saveKoSeen = function() { _origSaveKoSeen(); if(currentUser) { clearTimeout(wind
 const _origSaveKoResults = saveKoResults;
 saveKoResults = function() { _origSaveKoResults(); if(currentUser) { clearTimeout(window._syncT); window._syncT = setTimeout(syncToCloud, 1500); } };
 
-// Auto-sync: pull from cloud every 3s
+// Auto-sync: pull from cloud every 3s if something changed
 setInterval(async () => {
   const userEmail = currentUser?.email || (typeof currentUser === 'string' ? currentUser : null);
   console.log('[tick] email=', userEmail, 'editorOpen=', window._editorOpen);
@@ -2857,21 +2858,10 @@ setInterval(async () => {
     console.log('[sync] data=', !!data, 'error=', error?.message);
     if (error || !data) return;
     if (window._lastCloudUpdatedAt && data.updated_at === window._lastCloudUpdatedAt) return;
-    console.log('[sync] aplicando datos de la nube, updated_at=', data.updated_at);
+    console.log('[sync] aplicando datos, updated_at=', data.updated_at);
     await applyCloudData(data);
-  } catch(e) { console.log('[sync] error', e.message); }
+  } catch(e) { console.log('[sync] excepcion', e.message); }
 }, 3000);
-
-// Sync when tab becomes visible
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && currentUser) {
-    window._lastCloudUpdatedAt = null;
-    loadFromCloud();
-  }
-});
-window.addEventListener('focus', () => {
-  if (currentUser) { window._lastCloudUpdatedAt = null; loadFromCloud(); }
-});
 
 // Auth state
 sb.auth.getSession().then(async ({ data: { session } }) => {
@@ -2891,25 +2881,4 @@ sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_OUT') { setSyncStatus(''); clearLocalData(); }
 });
 
-// INIT
-updateStats();
-renderMatches();
-renderSquads();
 
-</script>
-
-<div class="logout-modal" id="logout-modal">
-  <div class="logout-box">
-    <h3>¿Cerrar sesión?</h3>
-    <p>Se cerrará tu sesión de Google en esta web.</p>
-    <div class="logout-btns">
-      <button class="logout-cancel" onclick="document.getElementById('logout-modal').classList.remove('open')">Cancelar</button>
-      <button class="logout-confirm" onclick="confirmLogout()">Cerrar sesión</button>
-    </div>
-  </div>
-</div>
-
-
-<div class="version-badge" title="v1"></div>
-</body>
-</html>
