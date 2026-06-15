@@ -1040,7 +1040,7 @@ function buildMatchHTML(m) {
       <div class="team-home"><span class="flag">${m.hf}</span><span>${m.home}</span></div>
       <div class="score-display">${scoreHTML}</div>
       <div class="team-away"><span class="flag">${m.af}</span><span>${m.away}</span></div>
-      <button class="edit-result-btn" onclick="event.stopPropagation(); openEditorFor(${m.id})">${r !== undefined ? '✏️ Editar' : '+ Resultado'}</button>
+      <button class="edit-result-btn" onclick="event.stopPropagation(); openEditorFor(${m.id})">'✏️'</button>
     </div>
     <div class="result-editor" id="editor-${m.id}">
       <div class="result-teams-row">
@@ -2513,7 +2513,7 @@ function buildKoMatchHTML(id) {
       ${buildKoSlot(id,'away')}
     </div>
     <div class="bs-footer">
-      <button class="bs-edit-btn" onclick="event.stopPropagation();openKoEditorFor(${id})">${rv?'✏️':'+'} Resultado</button>
+      <button class="bs-edit-btn" onclick="event.stopPropagation();openKoEditorFor(${id})">${rv?'✏️':'+'}</button>
       <button class="match-seen-btn" style="width:28px;height:28px;font-size:13px" onclick="event.stopPropagation();toggleKoSeen(${id})">${isSeen?'✓':'○'}</button>
     </div>
     <div class="bs-editor ${isEditorOpen?'open':''}">
