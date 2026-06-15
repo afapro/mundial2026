@@ -2730,6 +2730,29 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
   }
 });
 
+
+// ── AUTO-SYNC cada 10s ──
+setInterval(async () => {
+  if (!currentUser) return;
+  const { data, error } = await sb.from('progress').select('updated_at').eq('user_id', currentUser.email).single();
+  if (error || !data) return;
+  const cloudTime = new Date(data.updated_at).getTime();
+  if (!window._lastSyncTime || cloudTime > window._lastSyncTime) {
+    window._lastSyncTime = cloudTime;
+    const { data: full } = await sb.from('progress').select('*').eq('user_id', currentUser.email).single();
+    if (!full) return;
+    try {
+      seen = new Set(JSON.parse(full.seen || '[]'));
+      results = JSON.parse(full.results || '{}');
+      koSeen = new Set(JSON.parse(full.ko_seen || '[]'));
+      koResults = JSON.parse(full.ko_results || '{}');
+      saveSeen(); saveResults(); saveKoSeen(); saveKoResults();
+      updateStats(); renderMatches();
+      if (document.getElementById('section-eliminatorias')?.classList.contains('visible')) reRenderBracket();
+    } catch(e) {}
+  }
+}, 3000);
+
 sb.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user || null;
   updateAuthBtn(currentUser);
